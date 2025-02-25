@@ -1,0 +1,11 @@
+<table class="table table-hover table-bordered">
+	<tr th:each="row:${list}">
+		<td>[[${row.member.name}]]
+		( [[${#dates.format(row.regdate, 'yyyy-MM-dd HH:mm:ss')}]] )
+		<br>[[${row.replyText}]]
+			<span th:if="${session.userid == row.member.userid}" >
+				<buton type="button" th:onclick="showModify(this.getAttribute('data'))" th:data="${row.replyIdx}" class="btn btn-info">Modify
+			</span>
+		</td>
+	</tr>
+</table>
