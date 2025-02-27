@@ -2,7 +2,6 @@ package com.example.main_project.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,10 +10,9 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class Admin {
+public class Admin2 {
 	
 	@Id
-	@JoinColumn(name = "adminid")
 	private String adminid;
 	
 	private int level;
@@ -22,8 +20,7 @@ public class Admin {
 	private String name;
 	
 	
-	
-	public Admin(String adminid) {
+	public Admin2(String adminid) {
 		this.adminid = adminid;
 	}
 

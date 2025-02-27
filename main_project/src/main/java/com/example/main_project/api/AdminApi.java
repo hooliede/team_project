@@ -6,13 +6,18 @@ import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.main_project.dto.Admin2DTO;
 import com.example.main_project.dto.AdminDTO;
 import com.example.main_project.entity.Admin;
+import com.example.main_project.entity.Admin2;
+import com.example.main_project.repository.Admin2Repository;
 import com.example.main_project.repository.AdminRepository;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/admin/*")
@@ -22,23 +27,54 @@ public class AdminApi {
 	AdminRepository adminRepository;
 	
 	@Autowired
+	Admin2Repository admin2Repository;
+	
+	@Autowired
 	ModelMapper modelMapper;
 	
 	//member에서는 회원가입을 먼저 진행하지만 관리자는 db를 통해서 아이디와 비밀번호를 만들 것이다.
 //	react(프론트엔드) 실행 서버랑 spring boot(백엔드)실행 서버가 다르지만
 //	url로 찍어서 관리자 페이지에 들어온다면 그거는 사고 그래서 url자체를 특정 경로로만
-//	올 수 있게 하던가 모든 페이지에 session을 걸던가 constructor를 걸던가
+//	올 수 있게 하던가 모든 페이지에 session을 걸던가 interrupt를 걸던가
 
-	@PostMapping("login")
-	public Map<String, Object> login(AdminDTO dto) {
+	@RequestMapping("first_login")
+	public Map<String, Object> first_login(@RequestBody AdminDTO dto, HttpSession session) {
+		/* data를 react로부터 받을 때 사용되는 것들이 많음 일단 RequestParam으로 받아도 좋지만 보안상 혹은 여러 이유로 객체 받는 게 좋음
+		   그렇다보니 dto 객체로 받는 RequestBody나 RequestAttribute로 받는 게 좋음
+		   RequestBody와 RequestAttribute의 차이는 react에서 data를 보낼 때 형식에서의 차이임
+		   body: json이면 => RequestBody, body: form이면 => RequestAttribute		 
+		 */
 		Optional<Admin> result = adminRepository.findByAdminidAndPasswd(dto.getAdminid(), dto.getPasswd());
-		//repository를 활용해서 관리자의 정보를 dto로 가져오는 코드
+		/* 클라이언트 뷰에서 받아온 값이 실제 admin table에 있는지 확인하는 로직
+		   그런데 이제 그 값이 일치하면 실제 db에 있는 값이면 result에 그 값이 들어감 아니면 result가 비어버림
+		   비어있을 수도 있으니 optional을 통해서 is.Present를 사용 => null을 직접적으로 다루지 않게 처리
+		 */		
 		Map<String, Object> map = new HashMap<>();
 		if (result.isPresent()) {
 			Admin a = result.get();
-			map.put("message", "success");
-			map.put(null, a)
-			
+			session.setAttribute("adminid", a.getAdminid());
+			session.setAttribute("passwd", a.getPasswd());
+			session.setAttribute("level", a.getLevel());
+			//세션에 필요한 값을 저장
+			map.put("message", "로그인에 성공하셨습니다.");
+			map.put("adminid", a.getAdminid());
+			map.put("passwd", a.getPasswd());			
+		} else {
+			map.put("message", "아이디 또는 비밀번호가 잘못되었습니다. 아이디와 비밀번호를 정확히 입력해 주세요.");
 		}
+		return map;
 	}
+	
+	
+	@RequestMapping("second_login")
+	public Map<String, Object> second_login(Admin2DTO dto, HttpSession session) {
+		Optional<Admin2> result = admin2Repository.findByadminidAndPasswd(dto.getAdminid(), dto.getPasswd());
+	}
+	
+	
+	
+	
+	
+	
+	
 }
