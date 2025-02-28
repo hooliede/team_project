@@ -2,6 +2,7 @@ package com.example.main_project.api;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
@@ -17,6 +18,7 @@ import com.example.main_project.entity.Admin2;
 import com.example.main_project.repository.Admin2Repository;
 import com.example.main_project.repository.AdminRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -52,24 +54,56 @@ public class AdminApi {
 		Map<String, Object> map = new HashMap<>();
 		if (result.isPresent()) {
 			Admin a = result.get();
-			session.setAttribute("adminid", a.getAdminid());
-			session.setAttribute("passwd", a.getPasswd());
+			session.setAttribute("adminid", a.getAdminid());			
 			session.setAttribute("level", a.getLevel());
 			//세션에 필요한 값을 저장
-			map.put("message", "로그인에 성공하셨습니다.");
-			map.put("adminid", a.getAdminid());
-			map.put("passwd", a.getPasswd());			
+			map.put("message", "success");
+			map.put("adminid", a.getAdminid());						
 		} else {
-			map.put("message", "아이디 또는 비밀번호가 잘못되었습니다. 아이디와 비밀번호를 정확히 입력해 주세요.");
+			map.put("message", "error");
 		}
 		return map;
 	}
 	
 	
 	@RequestMapping("second_login")
-	public Map<String, Object> second_login(Admin2DTO dto, HttpSession session) {
+	public Map<String, Object> second_login(Admin2DTO dto, HttpSession session, HttpServletRequest request) {
 		Optional<Admin2> result = admin2Repository.findByadminidAndPasswd(dto.getAdminid(), dto.getPasswd());
+		Map<String, Object> map = new HashMap<>();
+		if(result.isEmpty()) {
+			map.put("message", "error");
+			map.put("status", 401);
+			return map;
+		}
+		Integer sessionLevel = (Integer) session.getAttribute("level");
+		//int sessionLevel = (int) session.getAttribute("level");
+		if(sessionLevel == null) {
+			map.put("message", "error");
+			map.put("status", 401);
+			return map;
+		}
+		
+		if(!Objects.equals(result.get().getLevel(), sessionLevel)) {
+			map.put("message", "본인에게 해당되는 관리자 계정이 아닙니다.");
+			map.put("message", 401);
+			return map;			
+		}
+		session.invalidate();//로그인을 성공했으면 2차 로그인 정보를 session에 넣기 위해 초기화
+		session = request.getSession(true);
+		session.setAttribute("adminid", result.get().getAdminid());
+		session.setAttribute("name", result.get().getName());
+		
+		map.put("message", "success");
+		map.put("status", 200);
+		map.put("adminid", result.get().getAdminid());
+		map.put("name", result.get().getName());
+		map.put("level", result.get().getLevel());		
+		
+		return map;
 	}
+	
+	
+	
 	
 	
 	
